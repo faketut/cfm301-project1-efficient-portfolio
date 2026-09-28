@@ -48,8 +48,15 @@ def _min_var_for_target(mu, cov, target):
 
 
 def efficient_frontier(mu, cov, n_points=60):
-    """Long-only frontier: min variance for each target return m*."""
-    targets = np.linspace(mu.min(), mu.max(), n_points)
+    """Long-only efficient frontier: min variance for each target return m*.
+
+    Targets start at the minimum-variance portfolio's expected return, so only
+    the efficient (upper) branch is traced -- the inefficient lower branch
+    below the global minimum-variance portfolio is excluded.
+    """
+    w_mv = min_variance_portfolio(mu, cov)
+    mu_mv = float(w_mv @ mu.values)
+    targets = np.linspace(mu_mv, mu.max(), n_points)
     rows = []
     for m in targets:
         w = _min_var_for_target(mu, cov, m)
@@ -61,8 +68,7 @@ def efficient_frontier(mu, cov, n_points=60):
 
 
 def min_variance_portfolio(mu, cov):
-    w = _min_var_for_target(mu, cov, mu.min())  # placeholder, refined below
-    # True global min-variance: no return target
+    # Global min-variance: no return target
     n = len(mu)
     res = minimize(lambda w: w @ cov.values @ w, np.ones(n) / n,
                    method="SLSQP", bounds=[(0, 1)] * n,
